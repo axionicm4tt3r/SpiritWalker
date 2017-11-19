@@ -8,7 +8,7 @@ public class PlayerCamera : MonoBehaviour {
 	private Transform player;
 	// Use this for initialization
 	void Start () {
-		player = GameObject.FindGameObjectWithTag("Player").transform;
+		player = GameObject.FindGameObjectWithTag("PlayerBody").transform;
 	}
 	
 	// Update is called once per frame

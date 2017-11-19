@@ -12,7 +12,7 @@ public class DoorCollisionHelper : MonoBehaviour {
 
 	void OnCollisionEnter2D(Collision2D collision)
 	{
-		if (collision.gameObject.tag == "Player")
+		if (collision.gameObject.tag == "PlayerBody")
 			parent.TriggerDoorCollision();
 	}
 }
