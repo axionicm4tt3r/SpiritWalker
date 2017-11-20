@@ -48,17 +48,17 @@ public class PlayerSpirit : MonoBehaviour
 	void Update()
 	{
 		ModifySpiritTag();
-		//HandleMovementInputs();
+		HandleMovementInputs();
 		HandleInteractionInputs();
 		RestoreTimescale();
 		BuildSpiritPath();
 
-		playerSpiritRigidbody.velocity = playerSpiritVelocity;
+		//playerSpiritRigidbody.velocity = playerSpiritVelocity;
 	}
 
 	void FixedUpdate()
 	{
-		HandleMovementInputs();
+		//HandleMovementInputs();
 		//playerSpiritRigidbody.velocity = playerSpiritVelocity;
 
 		//if (playerBodyRigidbody != null)
@@ -183,7 +183,7 @@ public class PlayerSpirit : MonoBehaviour
 				
 				var distance = Vector3.Distance(playerBody.transform.position, nextPositionToMoveTo);
 
-				Vector3 differenceVector = (nextPositionToMoveTo - (Vector3)playerBody.transform.position);
+				Vector3 differenceVector = (nextPositionToMoveTo - playerBody.transform.position);
 				Vector3 inputDirection = differenceVector.normalized;
 				if (inputDirection.magnitude > 0)
 				{
@@ -213,11 +213,10 @@ public class PlayerSpirit : MonoBehaviour
 			var currentAcceleration = SpiritMode ? accelerationSpirit : accelerationNormal;
 			Vector2 inputDirection = new Vector2(horizontalInput, verticalInput).normalized;
 
-			if (playerSpiritVelocity.magnitude > currentMaxSpeed)
-				playerSpiritVelocity = playerSpiritVelocity.normalized * currentMaxSpeed;
+			playerSpiritRigidbody.velocity += inputDirection * currentAcceleration * Time.deltaTime;
 
-			playerSpiritRigidbody.AddForce(inputDirection * currentAcceleration * Time.deltaTime, ForceMode2D.Impulse);
-			playerSpiritVelocity = inputDirection * currentMaxSpeed;
+			if (playerSpiritRigidbody.velocity.magnitude > currentMaxSpeed)
+				playerSpiritRigidbody.velocity = inputDirection.normalized * currentMaxSpeed;
 		}
 	}
 }
