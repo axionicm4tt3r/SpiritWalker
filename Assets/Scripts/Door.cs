@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Door : MonoBehaviour, TriggerableObject
+public class Door : MonoBehaviour, TriggerableObject, SwitchableObject
 {
 
 	public float closeDelay = 5;
@@ -31,6 +31,16 @@ public class Door : MonoBehaviour, TriggerableObject
 	public void TriggerObject()
 	{
 		TriggerDoorCollision();
+	}
+
+	public void SwitchOn()
+	{
+		OpenDoor();
+	}
+
+	public void SwitchOff()
+	{
+		CloseDoorAfterDelay();
 	}
 
 	private void MoveDoorToPosition()

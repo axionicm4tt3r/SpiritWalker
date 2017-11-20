@@ -5,10 +5,6 @@ using UnityEngine;
 public class PressurePlate : MonoBehaviour {
 
 	public GameObject[] linkedObjects;
-	// Use this for initialization
-	void Start () {
-		
-	}
 
 	private void OnTriggerEnter2D(Collider2D collision)
 	{
@@ -18,7 +14,18 @@ public class PressurePlate : MonoBehaviour {
 
 			foreach (var linkedObject in linkedObjects)
 			{
-				linkedObject.GetComponent<TriggerableObject>().TriggerObject();
+				linkedObject.GetComponent<SwitchableObject>().SwitchOn();
+			}
+		}
+	}
+
+	private void OnTriggerExit2D(Collider2D collision)
+	{
+		if (collision.gameObject.tag == "PlayerBody")
+		{
+			foreach (var linkedObject in linkedObjects)
+			{
+				linkedObject.GetComponent<SwitchableObject>().SwitchOff();
 			}
 		}
 	}

@@ -6,7 +6,7 @@ using System.Linq;
 public class PlayerSpirit : MonoBehaviour
 {
 	const float WAYPOINT_REACHED_DISTANCE = 0.1f;
-	const float WAYPOINT_DISTANCE_BETWEEN_PATH_NODES = 0.5f;
+	const float WAYPOINT_DISTANCE_BETWEEN_PATH_NODES = 0.2f;
 	const float TIMESCALE_TIME_SLOW = 0.4f;
 	const float TIMESCALE_TIME_NORMAL = 1f;
 	const float TIMESCALE_TIME_CONSTANT = 2f;
@@ -151,7 +151,7 @@ public class PlayerSpirit : MonoBehaviour
 			tag = "PlayerSpirit";
 			return;
 		}
-		else if (tag != "PlayerBody")
+		else if (!(SpiritMode || isRecallingBody) && tag != "PlayerBody")
 		{
 			tag = "PlayerBody";
 			return;
