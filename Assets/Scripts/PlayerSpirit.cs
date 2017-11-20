@@ -1,20 +1,21 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Linq;
 
 public class PlayerSpirit : MonoBehaviour
 {
 	const float WAYPOINT_REACHED_DISTANCE = 0.1f;
 	const float WAYPOINT_DISTANCE_BETWEEN_PATH_NODES = 0.5f;
-	const float TIMESCALE_TIME_SLOW = 0.6f;
+	const float TIMESCALE_TIME_SLOW = 0.4f;
 	const float TIMESCALE_TIME_NORMAL = 1f;
-	const float TIMESCALE_TIME_CONSTANT = 1f;
+	const float TIMESCALE_TIME_CONSTANT = 2f;
 
 	public GameObject playerBodyPrefab;
 
 	private float maxSpeedNormal = 5;
-	private float maxSpeedSpirit = 8;
-	private float maxSpeedRecall = 20;
+	private float maxSpeedSpirit = 12;
+	private float maxSpeedRecall = 25;
 
 	private Vector2 playerSpiritVelocity;
 	private Vector2 playerBodyVelocity;
@@ -22,20 +23,25 @@ public class PlayerSpirit : MonoBehaviour
 	public bool SpiritMode { get; private set; }
 
 	private LineRenderer spiritLink;
+	//private TrailRenderer spiritLink;
 
 	private bool isRecallingBody;
 	private GameObject playerBody;
-	private Queue<Vector2> pathToFollow;
+	private Queue<Vector3> pathToFollow;
 	private Vector2 lastItemAddedToPath;
 
 	private Rigidbody2D playerSpiritRigidbody;
 	private Rigidbody2D playerBodyRigidbody;
 
+	private Animator playerAnimator;
+
 	void Start()
 	{
-		pathToFollow = new Queue<Vector2>();
+		pathToFollow = new Queue<Vector3>();
 		playerSpiritRigidbody = GetComponent<Rigidbody2D>();
+		playerAnimator = GetComponent<Animator>();
 		spiritLink = GetComponent<LineRenderer>();
+		//spiritLink = GetComponent<TrailRenderer>();
 	}
 
 	void Update()
@@ -45,14 +51,25 @@ public class PlayerSpirit : MonoBehaviour
 		HandleInteractionInputs();
 		RestoreTimescale();
 		BuildSpiritPath();
-	}
 
-	void FixedUpdate()
-	{
 		playerSpiritRigidbody.velocity = playerSpiritVelocity;
 
-		if (playerBodyRigidbody != null)
-			playerBodyRigidbody.velocity = playerBodyVelocity;
+		//if (playerBodyRigidbody != null)
+		//	playerBodyRigidbody.velocity = playerBodyVelocity;
+	}
+
+	//void FixedUpdate()
+	//{
+	//	playerSpiritRigidbody.velocity = playerSpiritVelocity;
+
+	//	if (playerBodyRigidbody != null)
+	//		playerBodyRigidbody.velocity = playerBodyVelocity;
+	//}
+
+	void LateUpdate()
+	{
+		playerAnimator.SetFloat("HorizontalSpeed",playerSpiritVelocity.x);
+		playerAnimator.SetFloat("VerticalSpeed", playerSpiritVelocity.y);
 	}
 
 	private void HandleMovementInputs()
@@ -89,17 +106,18 @@ public class PlayerSpirit : MonoBehaviour
 		}
 
 		pathToFollow.Clear();
-		spiritLink.SetPositions(new Vector3[] { });
-		spiritLink.SetPosition(spiritLink.positionCount, transform.position);
 		pathToFollow.Enqueue(transform.position);
-		
+		spiritLink.positionCount = pathToFollow.Count;
+		spiritLink.SetPositions(pathToFollow.ToArray());
+
 		lastItemAddedToPath = transform.position;
 	}
 
 	private void ExitSpiritMode()
 	{
 		isRecallingBody = true;
-		//spiritLink.SetPositions(spiritLink.)
+		spiritLink.positionCount = pathToFollow.Count;
+		spiritLink.SetPositions(pathToFollow.ToArray());
 	}
 
 	private void RestoreTimescale()
@@ -148,6 +166,8 @@ public class PlayerSpirit : MonoBehaviour
 			{
 				pathToFollow.Enqueue(transform.position);
 				lastItemAddedToPath = transform.position;
+				spiritLink.positionCount = pathToFollow.Count;
+				spiritLink.SetPositions(pathToFollow.ToArray());
 			}
 		}
 	}
@@ -161,20 +181,23 @@ public class PlayerSpirit : MonoBehaviour
 			if (pathToFollow.Count > 0)
 			{
 				var nextPositionToMoveTo = pathToFollow.Peek();
-				spiritLink.GetPosition(0);
+				
 				var distance = Vector3.Distance(playerBody.transform.position, nextPositionToMoveTo);
 
-				Vector2 inputDirection = (nextPositionToMoveTo - (Vector2)playerBody.transform.position).normalized;
-				//if (inputDirection.magnitude > 0)
-				//{
-					playerBodyVelocity = inputDirection * maxSpeedRecall;
-					//Vector3 velocity = inputDirection * maxSpeedRecall;
-					//playerBody.transform.position = Vector3.SmoothDamp(playerBody.transform.position, nextPositionToMoveTo, ref velocity, 1f);
-				//}
+				Vector3 differenceVector = (nextPositionToMoveTo - (Vector3)playerBody.transform.position);
+				Vector3 inputDirection = differenceVector.normalized;
+				if (inputDirection.magnitude > 0)
+				{
+					//playerBodyVelocity = inputDirection * maxSpeedRecall;
+					Vector3 velocity = inputDirection * maxSpeedRecall;
+					playerBody.transform.position = Vector3.SmoothDamp(playerBody.transform.position, nextPositionToMoveTo, ref velocity, 1f);
+				}
 
 				if (distance <= WAYPOINT_REACHED_DISTANCE)
 				{
 					pathToFollow.Dequeue();
+					spiritLink.positionCount = pathToFollow.Count;
+					spiritLink.SetPositions(pathToFollow.ToArray());
 				}
 			}
 			else
