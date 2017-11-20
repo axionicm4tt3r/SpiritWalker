@@ -14,8 +14,11 @@ public class PlayerSpirit : MonoBehaviour
 	public GameObject playerBodyPrefab;
 
 	private float maxSpeedNormal = 5;
+	private float accelerationNormal = 12;
 	private float maxSpeedSpirit = 12;
+	private float accelerationSpirit = 20;
 	private float maxSpeedRecall = 25;
+	private float accelerationRecall = 40;
 
 	private Vector2 playerSpiritVelocity;
 	private Vector2 playerBodyVelocity;
@@ -23,7 +26,6 @@ public class PlayerSpirit : MonoBehaviour
 	public bool SpiritMode { get; private set; }
 
 	private LineRenderer spiritLink;
-	//private TrailRenderer spiritLink;
 
 	private bool isRecallingBody;
 	private GameObject playerBody;
@@ -41,30 +43,27 @@ public class PlayerSpirit : MonoBehaviour
 		playerSpiritRigidbody = GetComponent<Rigidbody2D>();
 		playerAnimator = GetComponent<Animator>();
 		spiritLink = GetComponent<LineRenderer>();
-		//spiritLink = GetComponent<TrailRenderer>();
 	}
 
 	void Update()
 	{
 		ModifySpiritTag();
-		HandleMovementInputs();
+		//HandleMovementInputs();
 		HandleInteractionInputs();
 		RestoreTimescale();
 		BuildSpiritPath();
 
 		playerSpiritRigidbody.velocity = playerSpiritVelocity;
+	}
+
+	void FixedUpdate()
+	{
+		HandleMovementInputs();
+		//playerSpiritRigidbody.velocity = playerSpiritVelocity;
 
 		//if (playerBodyRigidbody != null)
 		//	playerBodyRigidbody.velocity = playerBodyVelocity;
 	}
-
-	//void FixedUpdate()
-	//{
-	//	playerSpiritRigidbody.velocity = playerSpiritVelocity;
-
-	//	if (playerBodyRigidbody != null)
-	//		playerBodyRigidbody.velocity = playerBodyVelocity;
-	//}
 
 	void LateUpdate()
 	{
@@ -211,7 +210,13 @@ public class PlayerSpirit : MonoBehaviour
 		else
 		{
 			var currentMaxSpeed = SpiritMode ? maxSpeedSpirit : maxSpeedNormal;
+			var currentAcceleration = SpiritMode ? accelerationSpirit : accelerationNormal;
 			Vector2 inputDirection = new Vector2(horizontalInput, verticalInput).normalized;
+
+			if (playerSpiritVelocity.magnitude > currentMaxSpeed)
+				playerSpiritVelocity = playerSpiritVelocity.normalized * currentMaxSpeed;
+
+			playerSpiritRigidbody.AddForce(inputDirection * currentAcceleration * Time.deltaTime, ForceMode2D.Impulse);
 			playerSpiritVelocity = inputDirection * currentMaxSpeed;
 		}
 	}
