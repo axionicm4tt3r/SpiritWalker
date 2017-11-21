@@ -14,14 +14,13 @@ public class PlayerSpirit : MonoBehaviour
 	public GameObject playerBodyPrefab;
 
 	private float maxSpeedNormal = 5;
-	private float accelerationNormal = 12;
-	private float maxSpeedSpirit = 12;
-	private float accelerationSpirit = 20;
-	private float maxSpeedRecall = 25;
-	private float accelerationRecall = 40;
-
-	private Vector2 playerSpiritVelocity;
-	private Vector2 playerBodyVelocity;
+	private float accelerationNormal = 25;
+	private float dragNormal = 15;
+	private float maxSpeedSpirit = 40;
+	private float accelerationSpirit = 75;
+	private float dragSpirit = 30;
+	private float maxSpeedRecall = 75;
+	private float accelerationRecall = 120;
 
 	public bool SpiritMode { get; private set; }
 
@@ -35,6 +34,7 @@ public class PlayerSpirit : MonoBehaviour
 	private Rigidbody2D playerSpiritRigidbody;
 	private Rigidbody2D playerBodyRigidbody;
 
+	private Vector2 playerInputs;
 	private Animator playerAnimator;
 
 	void Start()
@@ -52,29 +52,19 @@ public class PlayerSpirit : MonoBehaviour
 		HandleInteractionInputs();
 		RestoreTimescale();
 		BuildSpiritPath();
-
-		//playerSpiritRigidbody.velocity = playerSpiritVelocity;
-	}
-
-	void FixedUpdate()
-	{
-		//HandleMovementInputs();
-		//playerSpiritRigidbody.velocity = playerSpiritVelocity;
-
-		//if (playerBodyRigidbody != null)
-		//	playerBodyRigidbody.velocity = playerBodyVelocity;
 	}
 
 	void LateUpdate()
 	{
-		playerAnimator.SetFloat("HorizontalSpeed",playerSpiritVelocity.x);
-		playerAnimator.SetFloat("VerticalSpeed", playerSpiritVelocity.y);
+		playerAnimator.SetFloat("HorizontalSpeed",playerInputs.x);
+		playerAnimator.SetFloat("VerticalSpeed", playerInputs.y);
 	}
 
 	private void HandleMovementInputs()
 	{
 		float verticalInput = Input.GetAxisRaw("Vertical");
 		float horizontalInput = Input.GetAxisRaw("Horizontal");
+		playerInputs = new Vector2(horizontalInput, verticalInput);
 
 		CalculateMovement(verticalInput, horizontalInput);
 	}
@@ -108,8 +98,12 @@ public class PlayerSpirit : MonoBehaviour
 		pathToFollow.Enqueue(transform.position);
 		spiritLink.positionCount = pathToFollow.Count;
 		spiritLink.SetPositions(pathToFollow.ToArray());
-
 		lastItemAddedToPath = transform.position;
+
+		var physicalWorld = GameObject.FindGameObjectWithTag("WorldTilemap").FindTaggedObjectInChildren("PhysicalWorld");
+		physicalWorld.SetActive(false);
+		var spiritWorld = GameObject.FindGameObjectWithTag("WorldTilemap").FindTaggedObjectInChildren("SpiritWorld");
+		spiritWorld.SetActive(true);
 	}
 
 	private void ExitSpiritMode()
@@ -175,7 +169,7 @@ public class PlayerSpirit : MonoBehaviour
 	{
 		if (isRecallingBody)
 		{
-			playerSpiritVelocity = Vector2.zero;
+			playerSpiritRigidbody.velocity = Vector2.zero;
 
 			if (pathToFollow.Count > 0)
 			{
@@ -187,7 +181,6 @@ public class PlayerSpirit : MonoBehaviour
 				Vector3 inputDirection = differenceVector.normalized;
 				if (inputDirection.magnitude > 0)
 				{
-					//playerBodyVelocity = inputDirection * maxSpeedRecall;
 					Vector3 velocity = inputDirection * maxSpeedRecall;
 					playerBody.transform.position = Vector3.SmoothDamp(playerBody.transform.position, nextPositionToMoveTo, ref velocity, 1f);
 				}
@@ -201,22 +194,35 @@ public class PlayerSpirit : MonoBehaviour
 			}
 			else
 			{
-				Destroy(playerBody);
-				playerBody = null;
-				playerBodyRigidbody = null;
-				isRecallingBody = false;
+				CompleteSpiritRecall();
 			}
 		}
 		else
 		{
 			var currentMaxSpeed = SpiritMode ? maxSpeedSpirit : maxSpeedNormal;
 			var currentAcceleration = SpiritMode ? accelerationSpirit : accelerationNormal;
+			var currentDrag = SpiritMode ? dragSpirit : dragNormal;
+
 			Vector2 inputDirection = new Vector2(horizontalInput, verticalInput).normalized;
 
 			playerSpiritRigidbody.velocity += inputDirection * currentAcceleration * Time.deltaTime;
+			playerSpiritRigidbody.velocity -= playerSpiritRigidbody.velocity / currentDrag;
 
 			if (playerSpiritRigidbody.velocity.magnitude > currentMaxSpeed)
-				playerSpiritRigidbody.velocity = inputDirection.normalized * currentMaxSpeed;
+				playerSpiritRigidbody.velocity = playerSpiritRigidbody.velocity.normalized * currentMaxSpeed;
 		}
+	}
+
+	private void CompleteSpiritRecall()
+	{
+		Destroy(playerBody);
+		playerBody = null;
+		playerBodyRigidbody = null;
+		isRecallingBody = false;
+
+		var physicalWorld = GameObject.FindGameObjectWithTag("WorldTilemap").FindTaggedObjectInChildren("PhysicalWorld");
+		physicalWorld.SetActive(true);
+		var spiritWorld = GameObject.FindGameObjectWithTag("WorldTilemap").FindTaggedObjectInChildren("SpiritWorld");
+		spiritWorld.SetActive(false);
 	}
 }
